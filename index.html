@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Estoque Simples</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #fff;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 2px;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.alerta {
+  background: #ffe5e5;
+  color: #b30000;
+  font-weight: bold;
+}
+
+.acoes button {
+  font-size: 14px;
+}
+
+.relatorio {
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📦 Controle de Estoque</h1>
+
+<div class="card">
+  <h2>Cadastrar Produto</h2>
+  <input id="nome" placeholder="Nome do produto">
+  <input id="quantidade" type="number" placeholder="Quantidade inicial">
+  <input id="minimo" type="number" placeholder="Estoque mínimo">
+  <button onclick="adicionarProduto()">Adicionar Produto</button>
+</div>
+
+<div class="card">
+  <h2>Estoque Atual</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Quantidade</th>
+        <th>Mínimo</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+  </table>
+</div>
+
+<div class="card relatorio">
+  <p id="relatorio"></p>
+</div>
+
+<script>
+let estoque = JSON.parse(localStorage.getItem("estoque")) || [];
+
+function salvar() {
+  localStorage.setItem("estoque", JSON.stringify(estoque));
+  render();
+}
+
+function adicionarProduto() {
+  const nome = document.getElementById("nome").value.trim();
+  const quantidade = parseInt(document.getElementById("quantidade").value);
+  const minimo = parseInt(document.getElementById("minimo").value);
+
+  if (!nome || isNaN(quantidade) || isNaN(minimo)) {
+    alert("Preencha todos os campos corretamente.");
+    return;
+  }
+
+  estoque.push({ nome, quantidade, minimo });
+  salvar();
+
+  document.getElementById("nome").value = "";
+  document.getElementById("quantidade").value = "";
+  document.getElementById("minimo").value = "";
+}
+
+function render() {
+  const tabela = document.getElementById("tabela");
+  tabela.innerHTML = "";
+
+  let estoqueBaixo = 0;
+
+  estoque.forEach((p, i) => {
+    if (p.quantidade <= p.minimo) estoqueBaixo++;
+
+    tabela.innerHTML += `
+      <tr class="${p.quantidade <= p.minimo ? 'alerta' : ''}">
+        <td>${p.nome}</td>
+        <td>${p.quantidade}</td>
+        <td>${p.minimo}</td>
+        <td class="acoes">
+          <button onclick="entrada(${i})">+</button>
+          <button onclick="saida(${i})">-</button>
+          <button onclick="remover(${i})">🗑</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("relatorio").innerText =
+    `Total de produtos: ${estoque.length} | Estoque baixo: ${estoqueBaixo}`;
+}
+
+function entrada(i) {
+  estoque[i].quantidade++;
+  salvar();
+}
+
+function saida(i) {
+  if (estoque[i].quantidade > 0) {
+    estoque[i].quantidade--;
+    salvar();
+  }
+}
+
+function remover(i) {
+  if (confirm("Deseja remover este produto?")) {
+    estoque.splice(i, 1);
+    salvar();
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
